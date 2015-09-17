@@ -1,0 +1,12 @@
+# Xilinx
+.Xil/
+.srcs/
+
+# Project
+bd/
+out/
+prj/
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace

@@ -1,0 +1,121 @@
+#! /usr/bin/env sh
+# -*- mode: Bash; tab-width: 2 -*-
+
+VIVADO_VERSION=2015.2
+
+# Restore all saved environment variables.
+deactivate() {
+  if [[ -n "${saved_ps1}" ]]; then
+    PS1="${saved_ps1}"
+    unset saved_ps1
+  fi
+
+  if [[ -n "${saved_pythonpath}" ]]; then
+    PYTHONPATH="${saved_pythonpath}"
+    unset saved_pythonpath
+  else
+    unset PYTHONPATH
+  fi
+
+  if [[ -n "${saved_path}" ]]; then
+    PATH="${saved_path}"
+    unset saved_path
+  fi
+
+  unset PROJECT_ROOT
+  unset PROJECT_NAME
+
+  unset IP_REPO
+
+  unset NATIVE_PROJECT_ROOT
+
+  if [[ -n "${saved_msystem}" ]]; then
+    MSYSTEM=${saved_msystem}
+    unset saved_msystem
+  fi
+
+  if [[ -n "${BASH}" || -n "${ZSH_VERSION}" ]]; then
+    hash -r 2>/dev/null
+  fi
+
+  if [[ ! $1 == nondestructive ]]; then
+    unset -f deactivate
+  fi
+}
+
+# Deactive any currently active project.
+deactivate nondestructive
+
+# Get the path to the project directory; this script is ALWAYS in the same place
+# relative to the project directory.
+PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+export PROJECT_ROOT
+
+PROJECT_NAME="$(basename "${PROJECT_ROOT}")"
+export PROJECT_NAME
+
+IP_REPO=${PROJECT_ROOT}/ip_repo
+export IP_REPO
+
+sys_name=$(uname)
+case ${sys_name} in
+  MSYS*NT*)
+    # MSYS2 needs to identify as MINGW.
+    if [[ -n $MSYSTEM ]]; then
+      saved_msystem=${MSYSTEM}
+    fi
+
+    MSYSTEM=MINGW
+    ;&
+
+  MINGW*NT*|CYGWIN*NT*)
+    # Windows MINGW and MSYS support.
+    NATIVE_PROJECT_ROOT="$(cygpath -m ${PROJECT_ROOT})"
+    ;;
+
+  *)
+    # Linux support.
+    NATIVE_PROJECT_ROOT="${PROJECT_ROOT}"
+    ;;
+
+esac
+
+export NATIVE_PROJECT_ROOT
+
+# Update the environment path.
+saved_path="${PATH}"
+PATH="${PROJECT_ROOT}/bin:${PATH}"
+
+# Force the used Vivado version if we can.
+if [[ -n "${XILINX_HOME}" ]]; then
+  PATH="${XILINX_HOME}/SDK/${VIVADO_VERSION}/bin:${PATH}"
+  PATH="${XILINX_HOME}/Vivado/${VIVADO_VERSION}/bin:${PATH}"
+fi;
+
+# Update the PYTHONPATH to include the project 'lib' directory. Only save the
+# current value if PYTHONPATH is defined so that we don't restore it to an empty
+# string later.
+if [[ -n "${PYTHONPATH}" ]]; then
+  saved_pythonpath="${PYTHONPATH}"
+  PYTHONPATH="${PROJECT_ROOT}/lib:${PYTHONPATH}"
+else
+  PYTHONPATH="${PROJECT_ROOT}/lib"
+fi
+
+# PYTHONPATH may not have previously been exported.
+export PYTHONPATH
+
+if [[ -z "${PROJECT_PROMPT_DISABLE}" ]]; then
+  saved_ps1="$PS1"
+  if [[ "x${PROJECT_PROMPT}" != "x" ]]; then
+    PS1="${PROJECT_PROMPT}$PS1"
+  else
+    PS1="(${PROJECT_NAME}) $PS1"
+  fi
+fi
+
+# The bash and zsh shells need to forget past commands otherwise any PATH
+# changes may not be respected.
+if [[ -n "${BASH}" || -n "${ZSH_VERSION}" ]]; then
+  hash -r 2>/dev/null
+fi

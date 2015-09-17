@@ -1,0 +1,3 @@
+vhdl work ../../bench/tb_axi_gpio.vhd
+
+vhdl work ../../src/axi_gpio.vhd
