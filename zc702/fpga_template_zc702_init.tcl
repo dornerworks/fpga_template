@@ -1,6 +1,9 @@
 set prj [create_project -in_memory]
 set_property board_part em.avnet.com:microzed_7020:part0:1.0 $prj
 set_property target_language VHDL $prj
+set_property ip_repo_paths [list \
+  "../ip_repo" \
+] $prj
 
 source fpga_template_zc702_bd.tcl
 

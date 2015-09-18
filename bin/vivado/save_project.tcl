@@ -74,6 +74,16 @@ if {[llength $l_bd_scripts] > 0} {
   }
 
   puts $fd "set_property target_language $lang \$prj"
+
+  set repo_paths [get_property ip_repo_paths $prj]
+  if {[llength $repo_paths] > 0} {
+    puts $fd "set_property ip_repo_paths \[list \\"
+    foreach d $repo_paths {
+      puts $fd "  \"[relative_path_to $d $out_dir]\" \\"
+    }
+    puts $fd "] \$prj"
+  }
+
   puts $fd ""
   foreach script $l_bd_scripts {
     puts $fd "source [file tail $script]"
